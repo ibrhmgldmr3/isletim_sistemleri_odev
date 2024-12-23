@@ -1,0 +1,57 @@
+Temel Yapı ve İşleyiş:
+
+Program, sonsuz bir while döngüsü içinde çalışır. Her döngüde kullanıcıdan bir komut alır, bu komutu işler ve ardından tekrar komut beklemeye geçer.
+
+Başlık Dosyaları (#include):
+
+stdio.h: Standart girdi/çıktı işlemleri için gerekli fonksiyonları içerir (örneğin printf, fgets).
+
+stdlib.h: Genel amaçlı fonksiyonları içerir (örneğin malloc, exit).
+
+unistd.h: İşletim sistemi çağrılarına erişim için gerekli fonksiyonları içerir (örneğin fork, execvp, waitpid).
+
+string.h: String manipülasyon fonksiyonlarını içerir (örneğin strcpy, strcmp).
+
+sys/wait.h: Süreç yönetimi ve bekleme fonksiyonlarını içerir.
+
+stdbool.h: bool veri tipini kullanabilmek için eklenmiştir.
+
+Sabitler (#define):
+
+MAX_KOMUT_UZUNLUK: Bir komut satırının alabileceği maksimum karakter sayısını belirtir.
+
+MAX_ARGUMAN: Bir komutun alabileceği maksimum argüman sayısını belirtir.
+
+MAX_ARKA_PLAN_SUREC: Aynı anda çalışabilecek maksimum arka plan süreç sayısını sınırlar.
+
+Veri Yapıları:
+
+ArkaPlanSurec adlı bir struct, arka planda çalışan süreçlerin PID'lerini ve komutlarını saklamak için kullanılır.
+
+arka_plan_surecleri dizisi, aktif arka plan süreçlerinin listesini tutar.
+
+arka_plan_surec_sayisi, o anda kaç tane arka plan sürecinin çalıştığını takip eder.
+
+Fonksiyonlar:
+
+arka_plan_surec_ekle(): Yeni bir arka plan sürecini arka_plan_surecleri listesine ekler. Liste doluluğunu kontrol eder ve güvenli bir şekilde komut kopyalaması yapar.
+
+arka_plan_surec_kaldir(): PID'i verilen bir süreci arka_plan_surecleri listesinden kaldırır.
+
+arka_plan_surecleri_kontrol(): Biten arka plan süreçlerini waitpid fonksiyonu ile kontrol eder. Biten süreçlerin PID'lerini ve çıkış kodlarını ekrana yazdırır ve listeden kaldırır.
+
+main() Fonksiyonu İşleyişi:
+
+Komut İstemi ve Giriş: Kullanıcıya > şeklinde bir komut istemi gösterilir ve fgets ile komut satırı okunur.
+
+Komut Ayrıştırma: strtok fonksiyonu kullanılarak komut satırı boşluklara göre parçalara ayrılır ve argumanlar dizisine kaydedilir. Komutun arka planda çalıştırılıp çalıştırılmayacağı (& işareti ile) kontrol edilir.
+
+quit Komutu İşleme: Eğer girilen komut quit ise, program sonlanır. Öncesinde tüm arka plan süreçlerinin bitmesi beklenir.
+
+Arka Plan Süreç Kontrolü: Yeni bir komut işlenmeden önce arka_plan_surecleri_kontrol() fonksiyonu çağrılarak biten arka plan süreçleri hakkında bilgi verilir.
+
+Süreç Oluşturma (fork): fork sistemi çağrısı ile yeni bir çocuk süreç oluşturulur.
+
+Çocuk Süreç: execvp fonksiyonu ile belirtilen komut çalıştırılır. Eğer execvp başarısız olursa hata mesajı yazdırılır ve çocuk süreç sonlanır. Arka planda çalışacak süreçler için setpgid(0, 0) çağrısı ile yeni bir süreç grubu oluşturulur (isteğe bağlı).
+
+Ana Süreç: Eğer komut arka planda çalıştırılmıyorsa, waitpid ile çocuk sürecin bitmesi beklenir. Eğer arka planda çalıştırılıyorsa, çocuk sürecin PID'i ekrana yazdırılır ve süreç arka_plan_surec_ekle ile listeye eklenir.
