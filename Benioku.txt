@@ -1,0 +1,2 @@
+
+Veri.txt ana dosyanın içinde SABİS'te sistemde bulunan ile aynıdır.
