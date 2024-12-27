@@ -1,8 +1,9 @@
-Anakural: derle calistir
+program: derle main
 
 derle:
-    gcc -I ./include/ -o ./bin/Main ./src/main.c
+	gcc -I ./include/ -o ./lib/main.o -c ./src/main.c
+	gcc -o ./bin/Main ./lib/main.o
 
-calistir:
-    cmd /c cls
-    ./bin/Main.exe
+
+main:
+	./bin/Main
