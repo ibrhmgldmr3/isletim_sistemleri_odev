@@ -28,77 +28,79 @@ void execute_with_redirection(char **args, char *output_file) {
         perror("Fork failed");
     }
 }
-void execute_with_redirection(char **args, char *output_file);
+void execute_command(char *command) {
+    char *args[MAX_COMMANDS];
+    char *output_file = NULL;
+    int i = 0;
 
-int command(int input, int first, int last, char *cmd) {
-    int pipettes[2];
-    pid_t pid;
+    args[i] = strtok(command, " ");
+    while (args[i] != NULL) {
+        i++;
+        args[i] = strtok(NULL, " ");
+    }
 
-    pipe(pipettes);
-    pid = fork();
+    if (i > 2 && strcmp(args[i - 2], ">") == 0) {
+        output_file = args[i - 1];
+        args[i - 2] = NULL;
+    }
 
-    if (pid == 0) {
-        if (first == 1 && last == 0 && input == 0) {
-            dup2(pipettes[1], STDOUT_FILENO);
-        } else if (first == 0 && last == 0 && input != 0) {
-            dup2(input, STDIN_FILENO);
-            dup2(pipettes[1], STDOUT_FILENO);
+    if (output_file) {
+        execute_with_redirection(args, output_file);
+    } else {
+        if (fork() == 0) {
+            execvp(args[0], args);
+            perror("execvp");
+            _exit(1);
         } else {
-            dup2(input, STDIN_FILENO);
+            wait(NULL);
         }
+    }
+}
 
-        if (execvp(cmd, (char *const[]){cmd, NULL}) == -1) {
+void execute_with_pipe(char *input_buffer) {
+    int i, n = 1, input = 0, first = 1;
+    char *cmd_exec[MAX_COMMANDS];
+
+    cmd_exec[0] = strtok(input_buffer, "|");
+    while ((cmd_exec[n] = strtok(NULL, "|")) != NULL) n++;
+    cmd_exec[n] = NULL;
+
+    for (i = 0; i < n; i++) {
+        int pipettes[2];
+        pipe(pipettes);
+
+        if (fork() == 0) {
+            if (first == 1 && n > 1) {
+                dup2(pipettes[1], STDOUT_FILENO);
+            } else if (i == n - 1) {
+                dup2(input, STDIN_FILENO);
+            } else {
+                dup2(input, STDIN_FILENO);
+                dup2(pipettes[1], STDOUT_FILENO);
+            }
+
+            close(pipettes[0]);
+            close(pipettes[1]);
+
+            char *args[MAX_COMMANDS];
+            int j = 0;
+            args[j] = strtok(cmd_exec[i], " ");
+            while (args[j] != NULL) {
+                j++;
+                args[j] = strtok(NULL, " ");
+            }
+
+            execvp(args[0], args);
             perror("execvp");
             exit(EXIT_FAILURE);
+        } else {
+            wait(NULL);
+            close(pipettes[1]);
+            input = pipettes[0];
+            first = 0;
         }
-    } else if (pid < 0) {
-        perror("fork");
-        exit(EXIT_FAILURE);
     }
-
-    if (input != 0) {
-        close(input);
-    }
-
-    close(pipettes[1]);
-
-    if (last == 1) {
-        close(pipettes[0]);
-    }
-
-    return pipettes[0];
 }
-
-void with_pipe_execute(char *input_buffer) {
-    int i, n = 1, input = 0, first = 1;
-    char *cmd_exec[MAX_COMMANDS];
-
-    cmd_exec[0] = strtok(input_buffer, "|");
-    while ((cmd_exec[n] = strtok(NULL, "|")) != NULL) n++;
-    cmd_exec[n] = NULL;
-
-    for (i = 0; i < n - 1; i++) {
-        input = command(input, first, 0, cmd_exec[i]);
-        first = 0;
-    }
-    command(input, first, 1, cmd_exec[i]);
-}
-// Pipe içeren komutları çalıştıran fonksiyon
-void pipe_execute(char *input_buffer) {
-    int i, n = 1, input = 0, first = 1;
-    char *cmd_exec[MAX_COMMANDS];
-
-    cmd_exec[0] = strtok(input_buffer, "|");
-    while ((cmd_exec[n] = strtok(NULL, "|")) != NULL) n++;
-    cmd_exec[n] = NULL;
-
-    for (i = 0; i < n - 1; i++) {
-        input = command(input, first, 0, cmd_exec[i]);
-        first = 0;
-    }
-    command(input, first, 1, cmd_exec[i]);
-}
-
 
 int main() {
     // Kullanıcıya komut girdisi için basit bir kabuk
