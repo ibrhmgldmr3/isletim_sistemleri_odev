@@ -28,32 +28,60 @@ void execute_with_redirection(char **args, char *output_file) {
         perror("Fork failed");
     }
 }
+void execute_with_redirection(char **args, char *output_file);
 
-// Komut parse edip çalıştırma
-void parse_and_execute(char *input) {
-    char *command_part = strtok(input, ">");
-    char *output_file = strtok(NULL, ">");
+int command(int input, int first, int last, char *cmd) {
+    int pipettes[2];
+    pid_t pid;
 
-    if (command_part) {
-        // Trim whitespace for output_file
-        if (output_file) {
-            while (*output_file == ' ') output_file++;
+    pipe(pipettes);
+    pid = fork();
+
+    if (pid == 0) {
+        if (first == 1 && last == 0 && input == 0) {
+            dup2(pipettes[1], STDOUT_FILENO);
+        } else if (first == 0 && last == 0 && input != 0) {
+            dup2(input, STDIN_FILENO);
+            dup2(pipettes[1], STDOUT_FILENO);
+        } else {
+            dup2(input, STDIN_FILENO);
         }
 
-        // Split command into arguments
-        char *args[128]; // Assuming a maximum of 128 arguments
-        int i = 0;
-        char *token = strtok(command_part, " ");
-        while (token != NULL && i < 128 - 1) {
-            args[i++] = token;
-            token = strtok(NULL, " ");
+        if (execvp(cmd, (char *const[]){cmd, NULL}) == -1) {
+            perror("execvp");
+            exit(EXIT_FAILURE);
         }
-        args[i] = NULL; // Null-terminate the argument list
-
-        execute_with_redirection(args, output_file);
-    } else {
-        printf("Invalid command format. Use: command > output_file\n");
+    } else if (pid < 0) {
+        perror("fork");
+        exit(EXIT_FAILURE);
     }
+
+    if (input != 0) {
+        close(input);
+    }
+
+    close(pipettes[1]);
+
+    if (last == 1) {
+        close(pipettes[0]);
+    }
+
+    return pipettes[0];
+}
+
+void with_pipe_execute(char *input_buffer) {
+    int i, n = 1, input = 0, first = 1;
+    char *cmd_exec[MAX_COMMANDS];
+
+    cmd_exec[0] = strtok(input_buffer, "|");
+    while ((cmd_exec[n] = strtok(NULL, "|")) != NULL) n++;
+    cmd_exec[n] = NULL;
+
+    for (i = 0; i < n - 1; i++) {
+        input = command(input, first, 0, cmd_exec[i]);
+        first = 0;
+    }
+    command(input, first, 1, cmd_exec[i]);
 }
 // Pipe içeren komutları çalıştıran fonksiyon
 void pipe_execute(char *input_buffer) {
