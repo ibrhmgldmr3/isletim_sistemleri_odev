@@ -1,5 +1,5 @@
-#ifndef KABUK_H
-#define KABUK_H
+#ifndef SHELL_H
+#define SHELL_H
 
 /*
  * İşletim Sistemleri Proje Ödevi - 2024 Güz
@@ -10,7 +10,7 @@
  *   - Tuğra Yavuz - B221210064 - tugra.yavuz@ogr.sakarya.edu.tr
  *   - İsmail Alper Karadeniz - B221210065 - alper.karadeniz@ogr.sakarya.edu.tr
  *
- * Dosya: kabuk.c
+ * Dosya: shell.h
  * Açıklama: Bu dosya, basit bir Linux kabuğunun C dilinde implementasyonunu içerir.
  */
 

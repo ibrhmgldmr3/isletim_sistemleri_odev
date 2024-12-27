@@ -7,8 +7,8 @@
 #  - Tuğra Yavuz - B221210064 - tugra.yavuz@ogr.sakarya.edu.tr
 #  - İsmail Alper Karadeniz - B221210065 - alper.karadeniz@ogr.sakarya.edu.tr
 #  
-#  Dosya: kabuk.c
-#  Açıklama: Bu dosya, basit bir Linux kabuğunun C dilinde implementasyonunu içerir.
+#  Dosya: makefile
+# 
 # 
 program: derle main
 
