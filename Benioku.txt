@@ -1,2 +1,1 @@
-
-Veri.txt ana dosyanın içinde SABİS'te sistemde bulunan ile aynıdır.
+Rapor dosyası doc klasörü içerisindedir.
