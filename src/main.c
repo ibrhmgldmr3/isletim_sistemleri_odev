@@ -5,7 +5,7 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-
+#define MAX_COMMANDS 100
 // Çıkış yönlendirme ve komut çalıştırma için temel fonksiyon
 void execute_with_redirection(char **args, char *output_file) {
     pid_t pid = fork();
@@ -55,6 +55,22 @@ void parse_and_execute(char *input) {
         printf("Invalid command format. Use: command > output_file\n");
     }
 }
+// Pipe içeren komutları çalıştıran fonksiyon
+void pipe_execute(char *input_buffer) {
+    int i, n = 1, input = 0, first = 1;
+    char *cmd_exec[MAX_COMMANDS];
+
+    cmd_exec[0] = strtok(input_buffer, "|");
+    while ((cmd_exec[n] = strtok(NULL, "|")) != NULL) n++;
+    cmd_exec[n] = NULL;
+
+    for (i = 0; i < n - 1; i++) {
+        input = command(input, first, 0, cmd_exec[i]);
+        first = 0;
+    }
+    command(input, first, 1, cmd_exec[i]);
+}
+
 
 int main() {
     // Kullanıcıya komut girdisi için basit bir kabuk
